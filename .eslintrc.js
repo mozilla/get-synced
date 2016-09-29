@@ -52,6 +52,7 @@ module.exports = {
     "globals": {
         "browser": true,
         "chrome": true,
+        "exports": true,
         "module": true,
         "require": true
     }
