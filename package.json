@@ -1,0 +1,20 @@
+{
+  "title": "Synced",
+  "name": "synced",
+  "version": "0.0.1",
+  "description": "The Mozilla Firefox Educational Tool",
+  "homepage": "https://github.com/mozilla/synced",
+  "repository": "https://github.com/mozilla/synced",
+  "main": "index.js",
+  "scripts": {
+    "test": "jpm test"
+  },
+  "author": "Mozilla Corporation",
+  "license": "MPL-2.0",
+  "keywords": [
+    "web extensions"
+  ],
+  "devDependencies": {
+      "eslint": "^3.5.0"
+  }
+}
