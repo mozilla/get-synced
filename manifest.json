@@ -19,7 +19,7 @@
     },
     "browser_action": {
         "browser_style": false,
-        "default_icon": "icons/icon-32_active.png",
+        "default_icon": "icons/icon-32.png",
         "default_title": "Firefox Notifications",
         "default_popup": "ui/pop-up.html"
     }
