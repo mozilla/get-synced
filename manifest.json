@@ -20,7 +20,6 @@
     "browser_action": {
         "browser_style": false,
         "default_icon": "icons/icon-32.png",
-        "default_title": "Learn more about Sync",
-        "default_popup": "ui/pop-up.html"
+        "default_title": "Learn more about Sync"
     }
 }
