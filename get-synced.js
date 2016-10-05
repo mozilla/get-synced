@@ -5,9 +5,6 @@ let poller = require('./lib/poller.js');
 let scheduler = require('./lib/scheduler.js');
 
 (function() {
-    // disable the browser_action
-    chrome.browserAction.disable();
-
     chrome.storage.local.get('lastNotificationTime', function(timer) {
         if (chrome.runtime.lastError) {
             console.error('Error getting lastNotificationTime on startup', chrome.runtime.lastError);
@@ -18,11 +15,13 @@ let scheduler = require('./lib/scheduler.js');
         // enough bookmarks to reach our threshold so, disable the chrome
         // icon, and start polling.
         if (typeof timer.lastNotificationTime === 'undefined') {
+            // disable the browser_action
+            chrome.browserAction.disable();
             // start polling bookmarks
             poller.poll();
         } else {
             // restart the last notification timer if it exists
-            scheduler.restartTimer();
+            scheduler.restartTimer(timer.lastNotificationTime);
         }
     });
 })();
@@ -101,7 +100,10 @@ let windowManager = require('./window-manager.js');
 
 module.exports = {
     notificationAlarmHandler: function() {
+        console.error('inside notificationAlarmHandler');
         chrome.alarms.onAlarm.addListener(function(alarm) {
+            console.error('alarm went off', alarm);
+            console.error('alarm went off', alarm.name);
             if (alarm.name === 'showNotification') {
                 module.exports.showNotification();
             }
@@ -124,6 +126,7 @@ module.exports = {
             storage.set({ 'lastNotificationTime': Date.now() });
             // start listening for click events
             module.exports.notificationClickHandler();
+            console.error('inside showNotification, calling notificationAlarmHandler');
             // start listening for notification alarms
             module.exports.notificationAlarmHandler();
             // set the chrome icon to the active state
@@ -198,24 +201,24 @@ module.exports = {
 let utils = require('./utils.js');
 
 // 48 hours in minutes
-let delayInMinutes = 2880;
+let delayInMinutes = 3;
 
 module.exports = {
     restartTimer: function(lastNotificationTime) {
+        console.error('inside restartTimer');
         let remainder = delayInMinutes - utils.getTimeElapsed(lastNotificationTime);
-
-        // clear any exiting alarmsr
-        chrome.alarms.clearAll();
-
+        console.error('inside restartTimer, remainder', remainder);
         // if the time remaining is two minutes or more,
         // schedule the notification for the remainder
         if (remainder >= 2) {
             delayInMinutes = remainder;
+            console.error('remainder >= 2', delayInMinutes);
             chrome.alarms.create('showNotification', {
                 delayInMinutes
             });
         } else {
             delayInMinutes = 1;
+            console.error('remainder < 2', delayInMinutes);
             // shedule the notification for a minute from now.
             chrome.alarms.create('showNotification', {
                 delayInMinutes
@@ -224,10 +227,13 @@ module.exports = {
     },
     scheduleNextNotification: function() {
         // clear any exiting alarmsr
-        chrome.alarms.clearAll();
-        // schedule the next to go off in 48 hours
-        chrome.alarms.create('showNotification', {
-            delayInMinutes
+        chrome.alarms.clearAll(function(wasCleared) {
+            if (wasCleared) {
+                // schedule the next to go off in 48 hours
+                chrome.alarms.create('showNotification', {
+                    delayInMinutes
+                });
+            }
         });
     }
 };
