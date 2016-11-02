@@ -1,6 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
+let notificationManager = require('./lib/notification-manager.js');
 let poller = require('./lib/poller.js');
 let scheduler = require('./lib/scheduler.js');
 
@@ -15,18 +16,22 @@ let scheduler = require('./lib/scheduler.js');
         // enough bookmarks to reach our threshold so, disable the chrome
         // icon, and start polling.
         if (typeof timer.lastNotificationTime === 'undefined') {
+            console.error('firstrun');
             // disable the browser_action
             chrome.browserAction.disable();
             // start polling bookmarks
             poller.poll();
         } else {
+            console.error('restartTimer called from index');
             // restart the last notification timer if it exists
             scheduler.restartTimer(timer.lastNotificationTime);
+            // start listening for the alarm set above
+            notificationManager.notificationAlarmHandler();
         }
     });
 })();
 
-},{"./lib/poller.js":5,"./lib/scheduler.js":6}],2:[function(require,module,exports){
+},{"./lib/notification-manager.js":4,"./lib/poller.js":5,"./lib/scheduler.js":6}],2:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -65,12 +70,15 @@ let windowManager = require('./window-manager.js');
 
 module.exports = {
     activateBrowserAction: function() {
+        console.error('enabling browser action');
         // enable the browser_action
         chrome.browserAction.enable();
+        console.error('updating icon');
         // update the icon to the active state
         chrome.browserAction.setIcon({
             path: 'icons/icon-32_active.png'
         });
+        console.error('scheduling next notification');
         // schedule the next notification which
         // will happen in 48 hours.
         scheduler.scheduleNextNotification();
@@ -116,19 +124,23 @@ module.exports = {
         });
     },
     showNotification: function() {
+        console.error('showing notification from notificationManager');
         chrome.notifications.create({
             'type': 'basic',
             'iconUrl': chrome.extension.getURL('ui/media/icons/bookmarks.gif'),
             'title': 'Learn more about Sync',
             'message': 'Get Firefox for Mobile and sync your bookmarks across devices'
         }, function() {
+            console.error('storing lastNotificationTime');
             // store the time when this notification was shown
             storage.set({ 'lastNotificationTime': Date.now() });
+            console.error('calling notificationClickHandler');
             // start listening for click events
             module.exports.notificationClickHandler();
             console.error('inside showNotification, calling notificationAlarmHandler');
             // start listening for notification alarms
             module.exports.notificationAlarmHandler();
+            console.error('calling activateBrowserAction');
             // set the chrome icon to the active state
             browserAction.activateBrowserAction();
         });
@@ -185,6 +197,7 @@ module.exports = {
                         if (newBookmarksCount < newBookmarksThreshold) {
                             window.setTimeout(module.exports.poll, 5000);
                         } else {
+                            console.error('showing notification from poller');
                             // shows the notification
                             notificationManager.showNotification();
                         }
@@ -204,21 +217,29 @@ let utils = require('./utils.js');
 let delayInMinutes = 3;
 
 module.exports = {
+    clearAlarms: function() {
+        // get all active alarms
+        chrome.alarms.getAll(function(alarms) {
+            // if there is at least one alarm
+            if (alarms.length > 0) {
+                chrome.alarms.clearAll();
+            }
+        });
+    },
     restartTimer: function(lastNotificationTime) {
-        console.error('inside restartTimer');
         let remainder = delayInMinutes - utils.getTimeElapsed(lastNotificationTime);
-        console.error('inside restartTimer, remainder', remainder);
+        console.error('remainder is?', remainder);
         // if the time remaining is two minutes or more,
         // schedule the notification for the remainder
         if (remainder >= 2) {
             delayInMinutes = remainder;
-            console.error('remainder >= 2', delayInMinutes);
+            console.error('>= 2, restarting for', delayInMinutes);
             chrome.alarms.create('showNotification', {
                 delayInMinutes
             });
         } else {
             delayInMinutes = 1;
-            console.error('remainder < 2', delayInMinutes);
+            console.error('< 2, restarting for', delayInMinutes);
             // shedule the notification for a minute from now.
             chrome.alarms.create('showNotification', {
                 delayInMinutes
@@ -226,14 +247,14 @@ module.exports = {
         }
     },
     scheduleNextNotification: function() {
+        console.error('scheduleNextNotification inside scheduler');
         // clear any exiting alarmsr
-        chrome.alarms.clearAll(function(wasCleared) {
-            if (wasCleared) {
-                // schedule the next to go off in 48 hours
-                chrome.alarms.create('showNotification', {
-                    delayInMinutes
-                });
-            }
+        this.clearAlarms();
+        console.error('alarm cleared');
+        console.error('scheduling new alarm in ', delayInMinutes);
+        // schedule the next to go off in 48 hours
+        chrome.alarms.create('showNotification', {
+            delayInMinutes
         });
     }
 };

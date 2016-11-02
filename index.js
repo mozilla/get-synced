@@ -1,5 +1,6 @@
 'use strict';
 
+let notificationManager = require('./lib/notification-manager.js');
 let poller = require('./lib/poller.js');
 let scheduler = require('./lib/scheduler.js');
 
@@ -9,7 +10,6 @@ let scheduler = require('./lib/scheduler.js');
             console.error('Error getting lastNotificationTime on startup', chrome.runtime.lastError);
             return;
         }
-
         // if lastNotificationTime is undefined, the user has not added
         // enough bookmarks to reach our threshold so, disable the chrome
         // icon, and start polling.
@@ -19,8 +19,10 @@ let scheduler = require('./lib/scheduler.js');
             // start polling bookmarks
             poller.poll();
         } else {
-            // restart the last notification timer if it exists
+            // restart the last notification alarm
             scheduler.restartTimer(timer.lastNotificationTime);
+            // start listening for the alarm set above
+            notificationManager.notificationAlarmHandler();
         }
     });
 })();
