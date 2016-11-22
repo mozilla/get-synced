@@ -76,12 +76,12 @@ module.exports = {
         // schedule the next notification which
         // will happen in 48 hours.
         scheduler.scheduleNextNotification();
-        this.browserActionClickHandler();
+        module.exports.browserActionClickHandler();
     },
     browserActionClickHandler: function() {
         chrome.browserAction.onClicked.addListener(function() {
             windowManager.openTab();
-            this.resetState();
+            module.exports.resetState();
         });
     },
     resetState: function() {
@@ -114,6 +114,16 @@ module.exports = {
         });
     },
     showNotification: function() {
+        browser.runtime.sendMessage('message-from-webextension').then(function(reply, error) {
+            if (error) {
+                console.error('Error sending message', error);
+                return;
+            }
+
+            if (reply) {
+                console.log('response from legacy add-on: ' + reply.content);
+            }
+        });
         chrome.notifications.create({
             'type': 'basic',
             'iconUrl': chrome.extension.getURL('ui/media/icons/bookmarks.gif'),
@@ -247,7 +257,7 @@ module.exports = {
             if (typeof data.notificationCount === 'undefined' ||
                 data.notificationCount < 3) {
                 // clear any exiting alarmsr
-                this.clearAlarms();
+                module.exports.clearAlarms();
                 // schedule the next to go off in 48 hours
                 chrome.alarms.create('showNotification', {
                     delayInMinutes

@@ -4,10 +4,14 @@
   "version": "0.0.1",
   "description": "The Mozilla Firefox Educational Tool",
   "homepage": "https://github.com/mozilla/synced",
+  "hasEmbeddedWebExtension": true,
   "repository": "https://github.com/mozilla/synced",
   "main": "index.js",
   "scripts": {
-    "test": "jpm test"
+    "test": "jpm test",
+    "compile": "browserify webextension/index.js -o webextension/get-synced.js",
+    "shield": "shield run . -- -b /Applications/FirefoxDeveloperEdition.app/Contents/MacOS/firefox",
+    "start": "npm-run-all compile shield"
   },
   "author": "Mozilla Corporation",
   "license": "MPL-2.0",
@@ -15,6 +19,10 @@
     "web extensions"
   ],
   "devDependencies": {
-      "eslint": "^3.5.0"
+    "browserify": "^13.1.1",
+    "eslint": "^3.5.0",
+    "jpm": "^1.2.2",
+    "npm-run-all": "^3.1.1",
+    "shield-study-cli": "^1.3.0"
   }
 }

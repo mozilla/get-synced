@@ -19,6 +19,16 @@ module.exports = {
         });
     },
     showNotification: function() {
+        browser.runtime.sendMessage('message-from-webextension').then(function(reply, error) {
+            if (error) {
+                console.error('Error sending message', error);
+                return;
+            }
+
+            if (reply) {
+                console.log('response from legacy add-on: ' + reply.content);
+            }
+        });
         chrome.notifications.create({
             'type': 'basic',
             'iconUrl': chrome.extension.getURL('ui/media/icons/bookmarks.gif'),
