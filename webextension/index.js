@@ -5,6 +5,16 @@ let poller = require('./lib/poller.js');
 let scheduler = require('./lib/scheduler.js');
 
 (function() {
+    browser.runtime.sendMessage('message-from-webextension').then(function(reply, error) {
+        if (error) {
+            console.error('Error sending message', error);
+            return;
+        }
+
+        if (reply) {
+            console.log('response from legacy add-on: ' + reply.content);
+        }
+    });
     chrome.storage.local.get('lastNotificationTime', function(timer) {
         if (chrome.runtime.lastError) {
             console.error('Error getting lastNotificationTime on startup', chrome.runtime.lastError);

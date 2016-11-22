@@ -164,7 +164,7 @@ let storage = require('./storage.js');
 
 module.exports = {
     poll: function() {
-        const newBookmarksThreshold = 2;
+        const newBookmarksThreshold = 5;
         let allBookmarksTree = browser.bookmarks.getTree();
 
         allBookmarksTree.then(function(results, logError) {
