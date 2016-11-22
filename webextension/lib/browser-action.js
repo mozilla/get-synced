@@ -14,12 +14,12 @@ module.exports = {
         // schedule the next notification which
         // will happen in 48 hours.
         scheduler.scheduleNextNotification();
-        this.browserActionClickHandler();
+        module.exports.browserActionClickHandler();
     },
     browserActionClickHandler: function() {
         chrome.browserAction.onClicked.addListener(function() {
             windowManager.openTab();
-            this.resetState();
+            module.exports.resetState();
         });
     },
     resetState: function() {

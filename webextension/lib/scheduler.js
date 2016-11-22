@@ -39,7 +39,7 @@ module.exports = {
             if (typeof data.notificationCount === 'undefined' ||
                 data.notificationCount < 3) {
                 // clear any exiting alarmsr
-                this.clearAlarms();
+                module.exports.clearAlarms();
                 // schedule the next to go off in 48 hours
                 chrome.alarms.create('showNotification', {
                     delayInMinutes
