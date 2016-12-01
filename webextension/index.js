@@ -3,18 +3,9 @@
 let notificationManager = require('./lib/notification-manager.js');
 let poller = require('./lib/poller.js');
 let scheduler = require('./lib/scheduler.js');
+let storage = require('./lib/storage.js');
 
 (function() {
-    browser.runtime.sendMessage('message-from-webextension').then(function(reply, error) {
-        if (error) {
-            console.error('Error sending message', error);
-            return;
-        }
-
-        if (reply) {
-            console.log('response from legacy add-on: ' + reply.content);
-        }
-    });
     chrome.storage.local.get('lastNotificationTime', function(timer) {
         if (chrome.runtime.lastError) {
             console.error('Error getting lastNotificationTime on startup', chrome.runtime.lastError);
@@ -26,8 +17,22 @@ let scheduler = require('./lib/scheduler.js');
         if (typeof timer.lastNotificationTime === 'undefined') {
             // disable the browser_action
             chrome.browserAction.disable();
-            // start polling bookmarks
-            poller.poll();
+
+            // get the variation for this study from the SDK side
+            browser.runtime.sendMessage('get-bookmarks-threshold-variation').then(function(reply, error) {
+                if (error) {
+                    console.error('Error sending message to SDK', error);
+                    return;
+                }
+
+                // store the variation
+                storage.set({ 'bookmarksThreshold': reply.variation });
+
+                if (reply) {
+                    // start polling bookmarks
+                    poller.poll(reply.variation);
+                }
+            });
         } else {
             // restart the last notification alarm
             scheduler.restartTimer(timer.lastNotificationTime);

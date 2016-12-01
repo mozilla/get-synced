@@ -11,7 +11,9 @@
     "test": "jpm test",
     "compile": "browserify webextension/index.js -o webextension/get-synced.js",
     "shield": "shield run . -- -b /Applications/FirefoxDeveloperEdition.app/Contents/MacOS/firefox",
-    "start": "npm-run-all compile shield"
+    "start": "npm-run-all compile shield",
+    "variation1": "shield run . bookmarks-mid -- -b /Applications/FirefoxDeveloperEdition.app/Contents/MacOS/firefox",
+    "variation": "npm-run-all compile variation1"
   },
   "author": "Mozilla Corporation",
   "license": "MPL-2.0",
@@ -23,6 +25,7 @@
     "eslint": "^3.5.0",
     "jpm": "^1.2.2",
     "npm-run-all": "^3.1.1",
+    "shield-studies-addon-utils": "^2.0.0",
     "shield-study-cli": "^1.3.0"
   }
 }

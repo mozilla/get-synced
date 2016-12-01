@@ -4,6 +4,7 @@
 let notificationManager = require('./lib/notification-manager.js');
 let poller = require('./lib/poller.js');
 let scheduler = require('./lib/scheduler.js');
+let storage = require('./lib/storage.js');
 
 (function() {
     chrome.storage.local.get('lastNotificationTime', function(timer) {
@@ -17,8 +18,22 @@ let scheduler = require('./lib/scheduler.js');
         if (typeof timer.lastNotificationTime === 'undefined') {
             // disable the browser_action
             chrome.browserAction.disable();
-            // start polling bookmarks
-            poller.poll();
+
+            // get the variation for this study from the SDK side
+            browser.runtime.sendMessage('get-bookmarks-threshold-variation').then(function(reply, error) {
+                if (error) {
+                    console.error('Error sending message to SDK', error);
+                    return;
+                }
+
+                // store the variation
+                storage.set({ 'bookmarksThreshold': reply.variation });
+
+                if (reply) {
+                    // start polling bookmarks
+                    poller.poll(reply.variation);
+                }
+            });
         } else {
             // restart the last notification alarm
             scheduler.restartTimer(timer.lastNotificationTime);
@@ -28,7 +43,7 @@ let scheduler = require('./lib/scheduler.js');
     });
 })();
 
-},{"./lib/notification-manager.js":4,"./lib/poller.js":5,"./lib/scheduler.js":6}],2:[function(require,module,exports){
+},{"./lib/notification-manager.js":4,"./lib/poller.js":5,"./lib/scheduler.js":6,"./lib/storage.js":7}],2:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -114,16 +129,6 @@ module.exports = {
         });
     },
     showNotification: function() {
-        browser.runtime.sendMessage('message-from-webextension').then(function(reply, error) {
-            if (error) {
-                console.error('Error sending message', error);
-                return;
-            }
-
-            if (reply) {
-                console.log('response from legacy add-on: ' + reply.content);
-            }
-        });
         chrome.notifications.create({
             'type': 'basic',
             'iconUrl': chrome.extension.getURL('ui/media/icons/bookmarks.gif'),
@@ -163,8 +168,7 @@ let notificationManager = require('./notification-manager.js');
 let storage = require('./storage.js');
 
 module.exports = {
-    poll: function() {
-        const newBookmarksThreshold = 5;
+    poll: function(newBookmarksThreshold) {
         let allBookmarksTree = browser.bookmarks.getTree();
 
         allBookmarksTree.then(function(results, logError) {
@@ -184,10 +188,8 @@ module.exports = {
                 // if originalBookmarksCount is undefined, this is the first iteration. Store
                 // the current number of bookmarks and set a timeout for 5 seconds.
                 if (typeof counter.originalBookmarksCount === 'undefined') {
-                    storage.set({
-                        'originalBookmarksCount': bookmarksCounter.getAllBookmarksCount(results)
-                    });
-                    window.setTimeout(module.exports.poll, 5000);
+                    storage.set({ 'originalBookmarksCount': bookmarksCounter.getAllBookmarksCount(results) });
+                    module.exports.reschedulePoller(newBookmarksThreshold);
                 } else {
                     let getOriginalBookmarksCount = browser.storage.local.get('originalBookmarksCount');
                     getOriginalBookmarksCount.then(function(item, logError) {
@@ -203,7 +205,7 @@ module.exports = {
                         // if we have not reached our threshold yet, set
                         // a new timeout.
                         if (newBookmarksCount < newBookmarksThreshold) {
-                            window.setTimeout(module.exports.poll, 5000);
+                            module.exports.reschedulePoller(newBookmarksThreshold);
                         } else {
                             // shows the notification
                             notificationManager.showNotification();
@@ -212,6 +214,11 @@ module.exports = {
                 }
             });
         });
+    },
+    reschedulePoller: function(newBookmarksThreshold) {
+        window.setTimeout(function() {
+            module.exports.poll(newBookmarksThreshold);
+        }, 5000);
     }
 };
 
@@ -302,8 +309,15 @@ module.exports = {
 
 module.exports = {
     openTab: function() {
-        chrome.tabs.create({
-            url: 'https://www.mozilla.org/firefox/sync/?utm_source=get-sycned-addon&utm_medium=firefox-browser&utm_campaign=get-synced-v-10'
+        chrome.storage.local.get('bookmarksThreshold', function(study) {
+            let params = '?utm_source=get-sycned-addon' +
+                         '&utm_medium=firefox-browser' +
+                         '&utm_campaign=get-synced-v-10' +
+                         '&utm_content=notification-' + study.bookmarksThreshold;
+
+            chrome.tabs.create({
+                url: 'https://www.mozilla.org/firefox/sync/' + params
+            });
         });
     }
 };
