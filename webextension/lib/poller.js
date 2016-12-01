@@ -5,8 +5,7 @@ let notificationManager = require('./notification-manager.js');
 let storage = require('./storage.js');
 
 module.exports = {
-    poll: function() {
-        const newBookmarksThreshold = 5;
+    poll: function(newBookmarksThreshold) {
         let allBookmarksTree = browser.bookmarks.getTree();
 
         allBookmarksTree.then(function(results, logError) {
@@ -26,10 +25,8 @@ module.exports = {
                 // if originalBookmarksCount is undefined, this is the first iteration. Store
                 // the current number of bookmarks and set a timeout for 5 seconds.
                 if (typeof counter.originalBookmarksCount === 'undefined') {
-                    storage.set({
-                        'originalBookmarksCount': bookmarksCounter.getAllBookmarksCount(results)
-                    });
-                    window.setTimeout(module.exports.poll, 5000);
+                    storage.set({ 'originalBookmarksCount': bookmarksCounter.getAllBookmarksCount(results) });
+                    module.exports.reschedulePoller(newBookmarksThreshold);
                 } else {
                     let getOriginalBookmarksCount = browser.storage.local.get('originalBookmarksCount');
                     getOriginalBookmarksCount.then(function(item, logError) {
@@ -45,7 +42,7 @@ module.exports = {
                         // if we have not reached our threshold yet, set
                         // a new timeout.
                         if (newBookmarksCount < newBookmarksThreshold) {
-                            window.setTimeout(module.exports.poll, 5000);
+                            module.exports.reschedulePoller(newBookmarksThreshold);
                         } else {
                             // shows the notification
                             notificationManager.showNotification();
@@ -54,5 +51,10 @@ module.exports = {
                 }
             });
         });
+    },
+    reschedulePoller: function(newBookmarksThreshold) {
+        window.setTimeout(function() {
+            module.exports.poll(newBookmarksThreshold);
+        }, 5000);
     }
 };
