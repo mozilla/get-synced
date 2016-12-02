@@ -1,11 +1,11 @@
 {
-  "title": "Synced",
-  "name": "synced",
-  "version": "0.0.1",
+  "title": "Get Synced",
+  "name": "get-synced",
+  "version": "1.0.0",
   "description": "The Mozilla Firefox Educational Tool",
-  "homepage": "https://github.com/mozilla/synced",
+  "homepage": "https://github.com/mozilla/get-synced/",
   "hasEmbeddedWebExtension": true,
-  "repository": "https://github.com/mozilla/synced",
+  "repository": "https://github.com/mozilla/get-synced/",
   "main": "index.js",
   "scripts": {
     "test": "jpm test",
@@ -18,7 +18,12 @@
   "author": "Mozilla Corporation",
   "license": "MPL-2.0",
   "keywords": [
-    "web extensions"
+    "web extensions",
+    "sdk",
+    "addon",
+    "javascript",
+    "node",
+    "jpm"
   ],
   "devDependencies": {
     "browserify": "^13.1.1",
