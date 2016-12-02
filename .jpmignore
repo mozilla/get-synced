@@ -1,0 +1,8 @@
+.DS_Store
+.git
+README.md
+node_modules/
+.gitignore
+.eslintrc.js
+.travis.yml
+*.xpi
